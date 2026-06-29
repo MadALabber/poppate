@@ -1,0 +1,940 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#fff7ed">
+  <title>Poppate</title>
+
+  <style>
+    :root {
+      --bg: #fff7ed;
+      --card: #ffffff;
+      --text: #172033;
+      --muted: #6b7280;
+      --line: #eadfd2;
+      --accent: #f97316;
+      --accent-dark: #c2410c;
+      --soft: #ffedd5;
+      --soft-2: #fffaf5;
+      --danger: #dc2626;
+      --ok: #059669;
+      --warning: #b45309;
+      --shadow: 0 14px 34px rgba(124, 45, 18, .10);
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    button, input { font: inherit; }
+    button { border: 0; cursor: pointer; }
+
+    .app {
+      width: min(100%, 680px);
+      margin: 0 auto;
+      padding: 18px 14px 28px;
+    }
+
+    .top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 15px;
+      display: grid;
+      place-items: center;
+      background: var(--soft);
+      font-size: 22px;
+      flex: 0 0 auto;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.45rem;
+      letter-spacing: -.04em;
+      line-height: 1;
+    }
+
+    .subtitle {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: .86rem;
+    }
+
+    .btn {
+      min-height: 42px;
+      border-radius: 14px;
+      font-weight: 850;
+      padding: 0 14px;
+      background: var(--card);
+      color: var(--accent-dark);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--line);
+      white-space: nowrap;
+    }
+
+    .btn.primary {
+      width: calc(100% - 24px);
+      margin: 0 12px 14px;
+      background: var(--accent);
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 12px 24px rgba(249, 115, 22, .24);
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .status-bar {
+      margin-bottom: 14px;
+      padding: 12px 14px;
+      border-radius: 18px;
+      background: var(--soft-2);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-size: .86rem;
+      line-height: 1.35;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .status-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .status-text { overflow: hidden; text-overflow: ellipsis; }
+
+    .status-dot {
+      flex: 0 0 auto;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--warning);
+    }
+
+    .status-dot.ok { background: var(--ok); }
+    .status-dot.err { background: var(--danger); }
+
+    .day-card {
+      padding: 18px;
+      margin-bottom: 14px;
+    }
+
+    .day-nav {
+      display: grid;
+      grid-template-columns: 42px 1fr 42px;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .arrow {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      background: var(--soft);
+      color: var(--accent-dark);
+      font-size: 1.2rem;
+      font-weight: 900;
+    }
+
+    .date-title { text-align: center; }
+
+    .date-title h2 {
+      margin: 0;
+      font-size: 1.65rem;
+      line-height: 1.05;
+      letter-spacing: -.05em;
+    }
+
+    .date-shell {
+      position: relative;
+      display: grid;
+      place-items: center;
+      margin: 10px auto 0;
+      width: min(100%, 240px);
+      min-height: 50px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--soft-2);
+      color: var(--text);
+      padding: 0 44px 0 14px;
+      font-size: 1.05rem;
+      font-weight: 950;
+      text-align: center;
+      outline: none;
+      box-shadow: none;
+    }
+
+    .date-shell:focus,
+    .date-shell:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(249, 115, 22, .12);
+    }
+
+    .date-shell::after {
+      content: "⌄";
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-54%);
+      color: var(--text);
+      font-size: 1rem;
+      font-weight: 900;
+      pointer-events: none;
+    }
+
+    .date-text {
+      pointer-events: none;
+      font-weight: 950;
+      letter-spacing: -.03em;
+    }
+
+    .native-date {
+      position: absolute;
+      right: 10px;
+      bottom: 8px;
+      width: 1px;
+      height: 1px;
+      opacity: .01;
+      pointer-events: none;
+      color-scheme: light;
+      appearance: auto;
+      -webkit-appearance: auto;
+    }
+
+    .totals {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .total-box {
+      border-radius: 18px;
+      background: var(--soft-2);
+      border: 1px solid var(--line);
+      padding: 14px;
+    }
+
+    .label {
+      color: var(--muted);
+      font-size: .78rem;
+      font-weight: 850;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    .value {
+      margin-top: 6px;
+      font-size: 1.7rem;
+      line-height: 1;
+      font-weight: 950;
+      letter-spacing: -.05em;
+    }
+
+    .value small {
+      font-size: .86rem;
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    .section-head {
+      padding: 16px 16px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .section-head h3 {
+      margin: 0;
+      font-size: 1.18rem;
+      letter-spacing: -.04em;
+    }
+
+    .section-head p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: .84rem;
+    }
+
+    .rows {
+      padding: 8px 12px 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .feed-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 40px;
+      gap: 8px;
+      align-items: end;
+      padding: 10px;
+      border-radius: 18px;
+      background: var(--soft-2);
+      border: 1px solid var(--line);
+    }
+
+    .field { display: grid; gap: 5px; }
+
+    .field label {
+      color: var(--muted);
+      font-size: .76rem;
+      font-weight: 850;
+    }
+
+    .field input {
+      width: 100%;
+      min-height: 44px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      padding: 8px 10px;
+      background: #fff;
+      color: var(--text);
+      outline: none;
+      font-weight: 850;
+    }
+
+    .field input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(249, 115, 22, .12);
+    }
+
+    .delete {
+      width: 40px;
+      height: 44px;
+      border-radius: 13px;
+      background: #fee2e2;
+      color: var(--danger);
+      font-size: 1.25rem;
+      font-weight: 900;
+    }
+
+    .week {
+      margin-top: 14px;
+      padding: 16px;
+    }
+
+    .week-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      padding-top: 12px;
+      margin-top: 10px;
+      border-top: 1px solid var(--line);
+    }
+
+    .week-start-box { display: grid; gap: 8px; }
+
+    .week-start-label {
+      color: var(--muted);
+      font-weight: 850;
+      font-size: .9rem;
+    }
+
+    .week-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: baseline;
+    }
+
+    .week-line strong {
+      font-size: 1.35rem;
+      letter-spacing: -.04em;
+    }
+
+    .empty {
+      text-align: center;
+      color: var(--muted);
+      padding: 26px 12px;
+    }
+
+    .saving {
+      font-size: .76rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .saving.ok { color: var(--ok); font-weight: 800; }
+    .saving.err { color: var(--danger); font-weight: 800; }
+
+    .toast {
+      position: fixed;
+      left: 14px;
+      right: 14px;
+      bottom: 18px;
+      z-index: 40;
+      transform: translateY(calc(100% + 80px));
+      opacity: 0;
+      pointer-events: none;
+      transition: transform .2s ease, opacity .2s ease;
+      border-radius: 16px;
+      background: #1f2937;
+      color: #fff;
+      padding: 13px 14px;
+      text-align: center;
+      font-weight: 850;
+      box-shadow: 0 18px 40px rgba(0,0,0,.18);
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    @media (min-width: 520px) {
+      .week-grid { grid-template-columns: 240px 1fr; align-items: end; }
+      .week-line { justify-content: flex-end; }
+    }
+
+    @media (max-width: 380px) {
+      .feed-row, .totals { grid-template-columns: 1fr; }
+      .delete { width: 100%; }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="app">
+    <header class="top">
+      <div class="brand">
+        <div class="icon">🍼</div>
+        <div>
+          <h1>Poppate</h1>
+          <p class="subtitle">Latte artificiale</p>
+        </div>
+      </div>
+      <button class="btn" id="todayBtn" type="button">Oggi</button>
+    </header>
+
+    <div class="status-bar">
+      <div class="status-left">
+        <span class="status-dot" id="statusDot"></span>
+        <span class="status-text" id="statusText">Connessione al DB centrale...</span>
+      </div>
+      <button class="btn" id="refreshBtn" type="button">Aggiorna</button>
+    </div>
+
+    <section class="card day-card">
+      <div class="day-nav">
+        <button class="arrow" id="prevDay" type="button" aria-label="Giorno precedente">‹</button>
+
+        <div class="date-title">
+          <h2 id="dayTitle">Oggi</h2>
+          <button class="date-shell" id="dateOpenBtn" type="button" aria-label="Scegli giorno">
+            <span class="date-text" id="dateText">--/--/----</span>
+            <input class="native-date" id="dateInput" type="date" lang="it-IT" tabindex="-1" aria-hidden="true">
+          </button>
+        </div>
+
+        <button class="arrow" id="nextDay" type="button" aria-label="Giorno successivo">›</button>
+      </div>
+
+      <div class="totals">
+        <div class="total-box">
+          <div class="label">Totale giorno</div>
+          <div class="value"><span id="dayTotal">0</span> <small>ml</small></div>
+        </div>
+        <div class="total-box">
+          <div class="label">Poppate</div>
+          <div class="value"><span id="feedCount">0</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <div>
+          <h3>Orari e ml</h3>
+          <p>Ogni modifica viene salvata nel database centrale.</p>
+        </div>
+      </div>
+
+      <div class="rows" id="rows"></div>
+      <button class="btn primary" id="addBtn" type="button">+ Aggiungi poppata</button>
+    </section>
+
+    <section class="card week">
+      <div class="label">Totale settimana</div>
+
+      <div class="week-grid">
+        <div class="week-start-box">
+          <div class="week-start-label">Inizio settimana</div>
+          <button class="date-shell" id="weekStartOpenBtn" type="button" aria-label="Scegli inizio settimana">
+            <span class="date-text" id="weekStartText">--/--/----</span>
+            <input class="native-date" id="weekStartInput" type="date" lang="it-IT" tabindex="-1" aria-hidden="true">
+          </button>
+        </div>
+
+        <div class="week-line">
+          <span id="weekRange">--/--/---- → --/--/----</span>
+          <strong><span id="weekTotal">0</span> ml</strong>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const API_URL = "/api/feeds";
+    const SETTINGS_URL = "/api/settings";
+    const REFRESH_MS = 15000;
+
+    const els = {
+      todayBtn: document.getElementById("todayBtn"),
+      refreshBtn: document.getElementById("refreshBtn"),
+      prevDay: document.getElementById("prevDay"),
+      nextDay: document.getElementById("nextDay"),
+      dateOpenBtn: document.getElementById("dateOpenBtn"),
+      dateText: document.getElementById("dateText"),
+      dateInput: document.getElementById("dateInput"),
+      weekStartOpenBtn: document.getElementById("weekStartOpenBtn"),
+      weekStartText: document.getElementById("weekStartText"),
+      weekStartInput: document.getElementById("weekStartInput"),
+      dayTitle: document.getElementById("dayTitle"),
+      dayTotal: document.getElementById("dayTotal"),
+      feedCount: document.getElementById("feedCount"),
+      weekTotal: document.getElementById("weekTotal"),
+      weekRange: document.getElementById("weekRange"),
+      rows: document.getElementById("rows"),
+      addBtn: document.getElementById("addBtn"),
+      statusDot: document.getElementById("statusDot"),
+      statusText: document.getElementById("statusText"),
+      toast: document.getElementById("toast")
+    };
+
+    let selectedDate = toDateKey(new Date());
+    let weekStart = selectedDate;
+    let loadedRows = [];
+    let currentRows = [];
+    let userIsEditing = false;
+    let editTimer = null;
+    let refreshTimer = null;
+    let saveCounters = {};
+
+    function pad(n) { return String(n).padStart(2, "0"); }
+
+    function toDateKey(date) {
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    }
+
+    function fromDateKey(key) { return new Date(`${key}T00:00:00`); }
+
+    function addDays(key, days) {
+      const date = fromDateKey(key);
+      date.setDate(date.getDate() + days);
+      return toDateKey(date);
+    }
+
+    function minDateKey(a, b) { return a <= b ? a : b; }
+    function maxDateKey(a, b) { return a >= b ? a : b; }
+
+    function formatEU(key) {
+      const d = fromDateKey(key);
+      return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+    }
+
+    function formatDayTitle(key) {
+      const today = toDateKey(new Date());
+      const yesterday = addDays(today, -1);
+      const tomorrow = addDays(today, 1);
+      const date = fromDateKey(key);
+
+      if (key === today) return "Oggi";
+      if (key === yesterday) return "Ieri";
+      if (key === tomorrow) return "Domani";
+
+      return date.toLocaleDateString("it-IT", {
+        weekday: "long",
+        day: "numeric",
+        month: "long"
+      });
+    }
+
+    function calculateTotal(rows) {
+      return rows.reduce((sum, row) => sum + (Number(row.ml) || 0), 0);
+    }
+
+    function setStatus(type, text) {
+      els.statusDot.className = "status-dot";
+      if (type === "ok") els.statusDot.classList.add("ok");
+      if (type === "err") els.statusDot.classList.add("err");
+      els.statusText.textContent = text;
+    }
+
+    function showToast(message) {
+      els.toast.textContent = message;
+      els.toast.classList.add("show");
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => els.toast.classList.remove("show"), 2200);
+    }
+
+    function markEditing() {
+      userIsEditing = true;
+      clearTimeout(editTimer);
+      editTimer = setTimeout(() => userIsEditing = false, 3000);
+    }
+
+    function openNativeDatePicker(input) {
+      if (!input) return;
+
+      input.focus({ preventScroll: true });
+
+      if (typeof input.showPicker === "function") {
+        try {
+          input.showPicker();
+          return;
+        } catch {}
+      }
+
+      input.click();
+    }
+
+    async function apiGet(urlString, params = {}) {
+      const url = new URL(urlString, window.location.origin);
+      Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, value));
+
+      const res = await fetch(url, {
+        method: "GET",
+        headers: { "Accept": "application/json" },
+        cache: "no-store"
+      });
+
+      if (!res.ok) throw new Error("Backend non raggiungibile");
+      return await res.json();
+    }
+
+    async function apiPost(urlString, payload) {
+      const res = await fetch(urlString, {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+        cache: "no-store",
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) throw new Error("Backend non raggiungibile");
+      return await res.json();
+    }
+
+    async function loadSettings() {
+      try {
+        const result = await apiGet(SETTINGS_URL);
+        if (result.week_start && /^\d{4}-\d{2}-\d{2}$/.test(result.week_start)) {
+          weekStart = result.week_start;
+        } else {
+          weekStart = selectedDate;
+          await saveWeekStart(weekStart, { silent: true });
+        }
+      } catch {
+        weekStart = selectedDate;
+      }
+    }
+
+    async function saveWeekStart(value, { silent = false } = {}) {
+      weekStart = value;
+      render();
+
+      try {
+        await apiPost(SETTINGS_URL, { key: "week_start", value });
+        if (!silent) setStatus("ok", "Inizio settimana salvato nel DB centrale");
+      } catch {
+        if (!silent) setStatus("err", "Backend non raggiungibile");
+      }
+    }
+
+    async function loadData({ silent = false } = {}) {
+      if (userIsEditing && silent) return;
+
+      const weekEnd = addDays(weekStart, 6);
+      const from = minDateKey(weekStart, selectedDate);
+      const to = maxDateKey(weekEnd, selectedDate);
+
+      if (!silent) setStatus("warn", "Sincronizzazione DB centrale...");
+
+      try {
+        const result = await apiGet(API_URL, { from, to });
+        loadedRows = Array.isArray(result.feeds) ? result.feeds : [];
+        render();
+        const time = new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+        setStatus("ok", `DB centrale sincronizzato · ${time}`);
+      } catch {
+        setStatus("err", "Backend non raggiungibile");
+      }
+    }
+
+    function render() {
+      const weekEnd = addDays(weekStart, 6);
+      const weekRows = loadedRows.filter(row => row.date >= weekStart && row.date <= weekEnd);
+
+      currentRows = loadedRows
+        .filter(row => row.date === selectedDate)
+        .sort((a, b) => String(a.time || "").localeCompare(String(b.time || "")));
+
+      els.dateInput.value = selectedDate;
+      els.dateText.textContent = formatEU(selectedDate);
+      els.weekStartInput.value = weekStart;
+      els.weekStartText.textContent = formatEU(weekStart);
+      els.dayTitle.textContent = formatDayTitle(selectedDate);
+
+      els.dayTotal.textContent = calculateTotal(currentRows);
+      els.feedCount.textContent = currentRows.length;
+      els.weekTotal.textContent = calculateTotal(weekRows);
+      els.weekRange.textContent = `${formatEU(weekStart)} → ${formatEU(weekEnd)}`;
+
+      if (!currentRows.length) {
+        els.rows.innerHTML = `
+          <div class="empty">
+            Nessuna poppata per questo giorno.<br>
+            Premi “Aggiungi poppata”.
+          </div>
+        `;
+        return;
+      }
+
+      els.rows.innerHTML = currentRows.map(row => `
+        <div class="feed-row" data-id="${escapeHtml(row.id)}">
+          <div class="field">
+            <label>Orario</label>
+            <input type="time" value="${escapeHtml(row.time || "")}" data-field="time" data-id="${escapeHtml(row.id)}">
+          </div>
+          <div class="field">
+            <label>Latte artificiale</label>
+            <input type="number" inputmode="numeric" min="0" step="1" placeholder="ml" value="${escapeHtml(row.ml ?? "")}" data-field="ml" data-id="${escapeHtml(row.id)}">
+            <div class="saving" id="saving-${escapeHtml(row.id)}">${row._savingText || ""}</div>
+          </div>
+          <button class="delete" type="button" data-delete="${escapeHtml(row.id)}" aria-label="Elimina poppata">×</button>
+        </div>
+      `).join("");
+
+      els.rows.querySelectorAll("input[data-field]").forEach(input => {
+        input.addEventListener("input", () => {
+          markEditing();
+
+          const row = currentRows.find(item => item.id === input.dataset.id);
+          if (!row) return;
+
+          row[input.dataset.field] = input.value;
+          row.updated_at = new Date().toISOString();
+
+          const loadedRow = loadedRows.find(item => item.id === row.id);
+          if (loadedRow) Object.assign(loadedRow, row);
+
+          renderTotalsOnly();
+          debouncedSaveRow(row);
+        });
+
+        input.addEventListener("blur", () => {
+          const row = currentRows.find(item => item.id === input.dataset.id);
+          if (row) saveRow(row);
+        });
+      });
+
+      els.rows.querySelectorAll("[data-delete]").forEach(button => {
+        button.addEventListener("click", async () => {
+          const row = currentRows.find(item => item.id === button.dataset.delete);
+          if (!row) return;
+
+          const ok = confirm("Eliminare questa poppata dal database centrale?");
+          if (!ok) return;
+
+          try {
+            setStatus("warn", "Eliminazione dal DB centrale...");
+            await apiPost(API_URL, { action: "delete", id: row.id, updated_at: new Date().toISOString() });
+            loadedRows = loadedRows.filter(item => item.id !== row.id);
+            render();
+            setStatus("ok", "Poppata eliminata dal DB centrale");
+          } catch {
+            setStatus("err", "Backend non raggiungibile");
+          }
+        });
+      });
+    }
+
+    function renderTotalsOnly() {
+      const weekEnd = addDays(weekStart, 6);
+      const weekRows = loadedRows.filter(row => row.date >= weekStart && row.date <= weekEnd);
+      els.dayTotal.textContent = calculateTotal(currentRows);
+      els.feedCount.textContent = currentRows.length;
+      els.weekTotal.textContent = calculateTotal(weekRows);
+    }
+
+    function setRowSaving(id, text, type = "") {
+      const el = document.getElementById(`saving-${id}`);
+      if (!el) return;
+      el.textContent = text;
+      el.className = `saving ${type}`;
+    }
+
+    function debouncedSaveRow(row) {
+      clearTimeout(row._saveTimer);
+      setRowSaving(row.id, "Modifica in corso...", "");
+      row._saveTimer = setTimeout(() => saveRow(row), 650);
+    }
+
+    async function saveRow(row) {
+      const id = row.id;
+      const counter = (saveCounters[id] || 0) + 1;
+      saveCounters[id] = counter;
+
+      setRowSaving(id, "Salvataggio DB...", "");
+
+      try {
+        const feed = {
+          id: row.id,
+          date: row.date,
+          time: row.time || "00:00",
+          ml: Number(row.ml || 0),
+          created_at: row.created_at || new Date().toISOString(),
+          updated_at: row.updated_at || new Date().toISOString()
+        };
+
+        await apiPost(API_URL, { action: "upsert", feed });
+
+        if (saveCounters[id] === counter) {
+          setRowSaving(id, "Salvato", "ok");
+          const time = new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+          setStatus("ok", `DB centrale aggiornato · ${time}`);
+        }
+      } catch {
+        if (saveCounters[id] === counter) {
+          setRowSaving(id, "Errore salvataggio", "err");
+          setStatus("err", "Backend non raggiungibile");
+        }
+      }
+    }
+
+    function newRow() {
+      const now = new Date();
+      return {
+        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
+        date: selectedDate,
+        time: `${pad(now.getHours())}:${pad(now.getMinutes())}`,
+        ml: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+    }
+
+    async function addRow() {
+      const row = newRow();
+
+      try {
+        setStatus("warn", "Creazione poppata nel DB centrale...");
+        await apiPost(API_URL, { action: "upsert", feed: row });
+        loadedRows.push(row);
+        render();
+        setStatus("ok", "Poppata creata nel DB centrale");
+
+        const input = els.rows.querySelector(`[data-id="${row.id}"][data-field="ml"]`);
+        if (input) {
+          input.focus();
+          input.select();
+        }
+      } catch {
+        setStatus("err", "Backend non raggiungibile");
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function startRefreshLoop() {
+      clearInterval(refreshTimer);
+      refreshTimer = setInterval(() => {
+        if (!userIsEditing) loadData({ silent: true });
+      }, REFRESH_MS);
+    }
+
+    els.addBtn.addEventListener("click", addRow);
+    els.refreshBtn.addEventListener("click", () => loadData());
+
+    els.todayBtn.addEventListener("click", async () => {
+      selectedDate = toDateKey(new Date());
+      render();
+      await loadData();
+    });
+
+    els.prevDay.addEventListener("click", async () => {
+      selectedDate = addDays(selectedDate, -1);
+      render();
+      await loadData();
+    });
+
+    els.nextDay.addEventListener("click", async () => {
+      selectedDate = addDays(selectedDate, 1);
+      render();
+      await loadData();
+    });
+
+    els.dateOpenBtn.addEventListener("click", () => openNativeDatePicker(els.dateInput));
+    els.weekStartOpenBtn.addEventListener("click", () => openNativeDatePicker(els.weekStartInput));
+
+    els.dateInput.addEventListener("change", async () => {
+      if (!els.dateInput.value) return;
+      selectedDate = els.dateInput.value;
+      render();
+      await loadData();
+    });
+
+    els.weekStartInput.addEventListener("change", async () => {
+      if (!els.weekStartInput.value) return;
+      await saveWeekStart(els.weekStartInput.value);
+      await loadData();
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") loadData({ silent: true });
+    });
+
+    (async function init() {
+      render();
+      startRefreshLoop();
+      await loadSettings();
+      render();
+      await loadData();
+    })();
+  </script>
+</body>
+</html>
