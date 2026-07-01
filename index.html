@@ -288,6 +288,40 @@
       font-size: .84rem;
     }
 
+    .history-tools {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .history-btn {
+      min-height: 38px;
+      min-width: 46px;
+      border-radius: 13px;
+      border: 1px solid var(--line);
+      background: var(--soft);
+      color: var(--accent-dark);
+      font-size: 1.05rem;
+      font-weight: 950;
+      box-shadow: var(--shadow);
+    }
+
+    .history-btn:disabled {
+      opacity: .42;
+      color: var(--muted);
+      box-shadow: none;
+    }
+
+    .history-count {
+      min-width: 48px;
+      color: var(--muted);
+      font-size: .78rem;
+      font-weight: 850;
+      text-align: center;
+    }
+
     .rows {
       padding: 8px 12px 14px;
       display: grid;
@@ -480,6 +514,12 @@
           <h3>Orari e ml</h3>
           <p>Ogni modifica viene salvata nel database centrale.</p>
         </div>
+
+        <div class="history-tools" aria-label="Cronologia modifiche">
+          <button class="history-btn" id="undoBtn" type="button" title="Annulla ultima modifica" aria-label="Annulla ultima modifica">↶</button>
+          <button class="history-btn" id="redoBtn" type="button" title="Ripeti modifica annullata" aria-label="Ripeti modifica annullata">↷</button>
+          <span class="history-count" id="historyCount">0/0</span>
+        </div>
       </div>
 
       <div class="rows" id="rows"></div>
@@ -531,6 +571,9 @@
       weekRange: document.getElementById("weekRange"),
       rows: document.getElementById("rows"),
       addBtn: document.getElementById("addBtn"),
+      undoBtn: document.getElementById("undoBtn"),
+      redoBtn: document.getElementById("redoBtn"),
+      historyCount: document.getElementById("historyCount"),
       statusDot: document.getElementById("statusDot"),
       statusText: document.getElementById("statusText"),
       toast: document.getElementById("toast")
@@ -544,6 +587,11 @@
     let editTimer = null;
     let refreshTimer = null;
     let saveCounters = {};
+    let undoStack = [];
+    let redoStack = [];
+    let editingHistoryCaptured = new Set();
+    let isRestoringHistory = false;
+    const HISTORY_LIMIT = 10;
 
     function pad(n) { return String(n).padStart(2, "0"); }
 
@@ -621,6 +669,139 @@
       }
 
       input.click();
+    }
+
+    function cleanRowForHistory(row) {
+      return {
+        id: row.id,
+        date: row.date,
+        time: row.time || "00:00",
+        ml: Number(row.ml || 0),
+        created_at: row.created_at || new Date().toISOString(),
+        updated_at: row.updated_at || new Date().toISOString()
+      };
+    }
+
+    function historySnapshot() {
+      return {
+        selectedDate,
+        weekStart,
+        rows: loadedRows
+          .filter(row => !row.deleted)
+          .map(cleanRowForHistory)
+          .sort((a, b) => `${a.date}|${a.time}|${a.id}`.localeCompare(`${b.date}|${b.time}|${b.id}`))
+      };
+    }
+
+    function snapshotKey(snapshot) {
+      return JSON.stringify(snapshot);
+    }
+
+    function updateHistoryControls() {
+      els.undoBtn.disabled = undoStack.length === 0 || isRestoringHistory;
+      els.redoBtn.disabled = redoStack.length === 0 || isRestoringHistory;
+      els.historyCount.textContent = `${undoStack.length}/${redoStack.length}`;
+    }
+
+    function pushHistorySnapshot(snapshot) {
+      if (isRestoringHistory) return;
+
+      const last = undoStack[undoStack.length - 1];
+      if (last && snapshotKey(last) === snapshotKey(snapshot)) return;
+
+      undoStack.push(snapshot);
+      if (undoStack.length > HISTORY_LIMIT) undoStack.shift();
+
+      redoStack = [];
+      updateHistoryControls();
+    }
+
+    function rememberBeforeChange() {
+      pushHistorySnapshot(historySnapshot());
+    }
+
+    function clearPendingRowSaves() {
+      loadedRows.forEach(row => {
+        if (row._saveTimer) clearTimeout(row._saveTimer);
+      });
+      saveCounters = {};
+    }
+
+    function sameFeedData(a, b) {
+      return String(a.date) === String(b.date)
+        && String(a.time || "00:00") === String(b.time || "00:00")
+        && Number(a.ml || 0) === Number(b.ml || 0);
+    }
+
+    async function syncSnapshotToServer(snapshot) {
+      const currentMap = new Map(loadedRows.map(row => [row.id, cleanRowForHistory(row)]));
+      const targetMap = new Map(snapshot.rows.map(row => [row.id, cleanRowForHistory(row)]));
+
+      for (const [id, current] of currentMap) {
+        if (!targetMap.has(id)) {
+          await apiPost(API_URL, { action: "delete", id, updated_at: new Date().toISOString() });
+        }
+      }
+
+      for (const [id, target] of targetMap) {
+        const current = currentMap.get(id);
+        if (!current || !sameFeedData(current, target)) {
+          await apiPost(API_URL, { action: "upsert", feed: { ...target, updated_at: new Date().toISOString() } });
+        }
+      }
+
+      if (snapshot.weekStart !== weekStart) {
+        await apiPost(SETTINGS_URL, { key: "week_start", value: snapshot.weekStart });
+      }
+    }
+
+    async function applyHistorySnapshot(snapshot, message) {
+      clearPendingRowSaves();
+      isRestoringHistory = true;
+      updateHistoryControls();
+      setStatus("warn", "Ripristino cronologia nel DB centrale...");
+
+      try {
+        await syncSnapshotToServer(snapshot);
+
+        selectedDate = snapshot.selectedDate;
+        weekStart = snapshot.weekStart;
+        loadedRows = snapshot.rows.map(row => ({ ...row }));
+        currentRows = [];
+        editingHistoryCaptured.clear();
+
+        render();
+        setStatus("ok", message);
+        showToast(message);
+      } catch {
+        setStatus("err", "Backend non raggiungibile");
+        showToast("Cronologia non ripristinata");
+      } finally {
+        isRestoringHistory = false;
+        updateHistoryControls();
+      }
+    }
+
+    async function undoChange() {
+      if (!undoStack.length || isRestoringHistory) return;
+
+      const current = historySnapshot();
+      const previous = undoStack.pop();
+      redoStack.push(current);
+      if (redoStack.length > HISTORY_LIMIT) redoStack.shift();
+
+      await applyHistorySnapshot(previous, "Modifica annullata");
+    }
+
+    async function redoChange() {
+      if (!redoStack.length || isRestoringHistory) return;
+
+      const current = historySnapshot();
+      const next = redoStack.pop();
+      undoStack.push(current);
+      if (undoStack.length > HISTORY_LIMIT) undoStack.shift();
+
+      await applyHistorySnapshot(next, "Modifica ripristinata");
     }
 
     async function apiGet(urlString, params = {}) {
@@ -716,6 +897,7 @@
       els.feedCount.textContent = currentRows.length;
       els.weekTotal.textContent = calculateTotal(weekRows);
       els.weekRange.textContent = `${formatEU(weekStart)} → ${formatEU(weekEnd)}`;
+      updateHistoryControls();
 
       if (!currentRows.length) {
         els.rows.innerHTML = `
@@ -743,11 +925,21 @@
       `).join("");
 
       els.rows.querySelectorAll("input[data-field]").forEach(input => {
+        input.addEventListener("focus", () => {
+          editingHistoryCaptured.delete(`${input.dataset.id}:${input.dataset.field}`);
+        });
+
         input.addEventListener("input", () => {
           markEditing();
 
           const row = currentRows.find(item => item.id === input.dataset.id);
           if (!row) return;
+
+          const editKey = `${input.dataset.id}:${input.dataset.field}`;
+          if (!editingHistoryCaptured.has(editKey)) {
+            rememberBeforeChange();
+            editingHistoryCaptured.add(editKey);
+          }
 
           row[input.dataset.field] = input.value;
           row.updated_at = new Date().toISOString();
@@ -760,6 +952,7 @@
         });
 
         input.addEventListener("blur", () => {
+          editingHistoryCaptured.delete(`${input.dataset.id}:${input.dataset.field}`);
           const row = currentRows.find(item => item.id === input.dataset.id);
           if (row) saveRow(row);
         });
@@ -774,6 +967,7 @@
           if (!ok) return;
 
           try {
+            rememberBeforeChange();
             setStatus("warn", "Eliminazione dal DB centrale...");
             await apiPost(API_URL, { action: "delete", id: row.id, updated_at: new Date().toISOString() });
             loadedRows = loadedRows.filter(item => item.id !== row.id);
@@ -855,6 +1049,7 @@
       const row = newRow();
 
       try {
+        rememberBeforeChange();
         setStatus("warn", "Creazione poppata nel DB centrale...");
         await apiPost(API_URL, { action: "upsert", feed: row });
         loadedRows.push(row);
@@ -888,6 +1083,8 @@
     }
 
     els.addBtn.addEventListener("click", addRow);
+    els.undoBtn.addEventListener("click", undoChange);
+    els.redoBtn.addEventListener("click", redoChange);
     els.refreshBtn.addEventListener("click", () => loadData());
 
     els.todayBtn.addEventListener("click", async () => {
@@ -920,6 +1117,7 @@
 
     els.weekStartInput.addEventListener("change", async () => {
       if (!els.weekStartInput.value) return;
+      rememberBeforeChange();
       await saveWeekStart(els.weekStartInput.value);
       await loadData();
     });
