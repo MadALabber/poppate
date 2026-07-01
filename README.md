@@ -2,6 +2,7 @@
 
 ## Fix applicati
 
+- 01/07 nuovo index.html introduce change history undo-redo x10
 - Ripristinato calendario nativo `input type="date"`.
 - Rimosso calendario custom.
 - I campi data sono veri input nativi visibili e cliccabili, non overlay nascosti.
